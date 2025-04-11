@@ -1,0 +1,258 @@
+/* App.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+body {
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f8f8f8;
+  color: #222;
+  scroll-behavior: smooth;
+}
+
+.App {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1rem;
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #111;
+}
+
+.search-box {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.search-box input {
+  padding: 0.6rem;
+  font-size: 1rem;
+  flex: 1 1 60%;
+  min-width: 200px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  background: #fff;
+  outline: none;
+}
+
+.search-box input:focus {
+  border-color: #888;
+  box-shadow: 0 0 0 3px rgba(100, 100, 255, 0.1);
+}
+
+.search-box button {
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  color: #333;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.search-box button:hover {
+  background-color: #eee;
+}
+
+.loading {
+  text-align: center;
+  margin: 2rem 0;
+}
+
+.loading div {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.loading div span {
+  width: 12px;
+  height: 12px;
+  background-color: #999;
+  border-radius: 50%;
+  animation: bounce 1.2s infinite ease-in-out;
+}
+
+.loading div span:nth-child(2) {
+  animation-delay: 0.3s;
+}
+
+.loading div span:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+.questions {
+  margin-top: 2rem;
+}
+
+.questions h3 {
+  text-align: left;
+  margin-bottom: 1rem;
+}
+
+.questions ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.questions li {
+  text-align: left;
+}
+
+.questions button {
+  background: #f5f5f5;
+  border: 1px solid #ccc;
+  color: #444;
+  padding: 0.8rem 1.2rem;
+  border-radius: 16px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.questions button:hover {
+  background: #e0e0e0;
+}
+
+.result {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.result button {
+  margin-top: 1rem;
+  padding: 0.6rem 1.2rem;
+  background: #f5f5f5;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.result button:hover {
+  background: #e0e0e0;
+}
+
+.popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+.popup.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.popup-inner button {
+  background: transparent;
+  border: 1px solid #ccc;
+  color: #333;
+  padding: 0.5rem 1rem; /* 패딩 크기 줄이기 */
+  border-radius: 8px;
+  font-size: 0.9rem; /* 글자 크기 줄이기 */
+  cursor: pointer;
+  transition: background 0.3s, color 0.3s;
+}
+
+.popup-inner button:hover {
+  background: #f5f5f5;
+  color: #000;
+}
+
+
+/* 팝업 배경과 경계는 그대로 유지 */
+.popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);  /* 어두운 배경 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+.popup.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.popup-inner {
+  background: #fff; /* 흰색 배경 */
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 400px;
+  width: 80%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 경계 그림자 */
+  text-align: center;
+  transform: translateY(20px);
+  transition: transform 0.4s ease;
+}
+
+.popup.show .popup-inner {
+  transform: translateY(0);
+}
+
+
+.popup.show .popup-inner {
+  transform: translateY(0);
+}
+
+.about-link {
+  margin-top: auto;
+  text-align: center;
+  cursor: pointer;
+  color: #777;
+  font-size: 0.9rem;
+  padding: 1rem;
+}
+
