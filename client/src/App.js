@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import './App.css';
 import axios from 'axios';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+
 function App() {
   const [keyword, setKeyword] = useState('');
   const [summary, setSummary] = useState('');
@@ -37,7 +39,7 @@ function App() {
     }
 
     try {
-      const response = await axios.post('http://localhost:3001/search', { keyword: rawInput });
+      const response = await axios.post(`${API_BASE_URL}/search`, { keyword: rawInput });
       setSummary(response.data.summary);
       setInitialResult(response.data.summary);
       setSource(response.data.source);
@@ -66,7 +68,7 @@ function App() {
     setIsQuestionMode(true);
 
     try {
-      const response = await axios.post('http://localhost:3001/question', {
+      const response = await axios.post(`${API_BASE_URL}/question`, {
         context,
         question
       });
@@ -169,7 +171,7 @@ function App() {
         </div>
       )}
 
-    {showAbout && (
+      {showAbout && (
         <div className={`popup ${showAbout ? 'show' : ''}`}>
           <div className="popup-inner">
             <h3>초등학생을 위한 AI 검색 도우미</h3>
@@ -177,10 +179,8 @@ function App() {
             <p>cyeons@gne.go.kr</p>
             <button onClick={() => setShowAbout(false)}>닫기</button>
           </div>
-</div>
-
-    )}
-
+        </div>
+      )}
 
       <div className="about-link" onClick={() => setShowAbout(true)}>About</div>
     </div>
