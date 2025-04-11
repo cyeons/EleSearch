@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
 import axios from 'axios';
+import ReactMarkdown from 'react-markdown';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
@@ -19,6 +20,8 @@ function App() {
   const [currentQuestion, setCurrentQuestion] = useState('');
   const [isQuestionMode, setIsQuestionMode] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [showNotice, setShowNotice] = useState(true); // 🔔 사용 전 주의사항 팝업
+
 
   const handleSearch = async (query, preserveQuestions = false) => {
     const rawInput = query || keyword;
@@ -104,8 +107,23 @@ function App() {
 
   const unusedQuestions = allQuestions.filter((q) => !usedQuestions.includes(q)).slice(0, 3);
 
-  return (
-    <div className="App">
+return (
+  <div className="App">
+
+    {showNotice && (
+      <div className="popup-overlay">
+        <div className="popup-notice">
+          <h3>📌 사용 전에 꼭 읽어주세요!</h3>
+          <ul>
+            <li>AI가 알려주는 정보는 항상 정답이 아닐 수 있어요.</li>
+            <li>꼭 선생님과 함께 사용하세요.</li>
+            <li>이름, 주소, 학교 같은 개인정보는 절대 입력하지 마세요!</li>
+            <li>검색은 너무 자주 하지 않도록 해요.</li>
+          </ul>
+          <button className="confirm-btn" onClick={() => setShowNotice(false)}>확인했어요</button>
+        </div>
+      </div>
+    )}
       <h1>🔍 초등학생을 위한 AI 검색 도우미</h1>
 
       <div className="search-box">
@@ -138,25 +156,24 @@ function App() {
       {!isQuestionMode && summary && (
         <div className="result">
           <div className="source-box">📚 이번 정보는 <strong>{source}</strong>에서 찾았어요!</div>
-          <div className="summary" dangerouslySetInnerHTML={{
-            __html: summary
-              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-              .replace(/\n/g, '<br />')
-          }} />
+          <div className="summary">
+            <ReactMarkdown>{summary}</ReactMarkdown>
+          </div>
         </div>
       )}
 
       {isQuestionMode && questionAnswer && (
         <div className="result">
           <div className="source-box">❓ <strong>{currentQuestion}</strong></div>
-          <div className="summary" dangerouslySetInnerHTML={{
-            __html: questionAnswer.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br />')
-          }} />
+          <div className="summary">
+            <ReactMarkdown>{questionAnswer}</ReactMarkdown>
+          </div>
           {initialResult && (
             <button onClick={returnToInitialSummary}>🔙 원래 요약 보기</button>
           )}
         </div>
       )}
+
 
       {unusedQuestions.length > 0 && (
         <div className="questions">
