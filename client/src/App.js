@@ -25,7 +25,7 @@ function App() {
     if (!rawInput.trim()) return;
 
     setLoading(true);
-    setLoadingMessage('🔍 인터넷에서 정보 찾는 중...');
+    setLoadingMessage('🌏 인터넷에서 정보 찾는 중...');
     setError('');
     setSummary('');
     setSource('');
