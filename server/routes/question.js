@@ -1,15 +1,9 @@
-// server/routes/question.js
-const express = require('express');
-const router = express.Router();
-const { OpenAI } = require('openai');
-require('dotenv').config();
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
 router.post('/', async (req, res) => {
+  const totalStart = Date.now();
+
   const { context, question } = req.body;
 
-  console.log('✅ /question 요청 도착');
+  console.log('\n🟡 [QUESTION START]');
   console.log('📝 질문:', question);
   console.log('📚 context 길이:', context?.length);
   console.log('📘 context 미리보기:', context?.slice(0, 150));
@@ -36,6 +30,8 @@ ${question}
   `;
 
   try {
+    console.time('🧠 GPT 응답 시간');
+
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
@@ -45,13 +41,17 @@ ${question}
       temperature: 0.5
     });
 
+    console.timeEnd('🧠 GPT 응답 시간');
+
     const answer = completion.choices[0].message.content.trim();
     console.log('✅ GPT 응답 완료');
+
+    const totalDuration = Date.now() - totalStart;
+    console.log(`✅ 질문 응답 완료 → 총 소요 시간: ${totalDuration}ms`);
+
     res.json({ answer });
   } catch (error) {
     console.error('❌ 질문 응답 실패:', error.message);
     res.status(500).json({ message: '질문 응답 중 오류가 발생했습니다.', error: error.message });
   }
 });
-
-module.exports = router;
