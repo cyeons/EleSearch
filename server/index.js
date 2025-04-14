@@ -4,17 +4,23 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const cors = require('cors');
 const { OpenAI } = require('openai');
-const { isReliableResult } = require('./utils/validate');
+const { isReliableResult, isValidKeyword, containsBlockedWord } = require('./utils/validate');
 const rateLimit = require('express-rate-limit');
 const recentSearchCache = new Map(); // key: ip+keyword, value: timestamp
+const { logSearch } = require('./utils/logger');
+const dailyRequestCount = new Map(); // key: userId, value: { count, lastDate }
+
 require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3001;
 const searchLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1분
+  windowMs: 60 * 1000,  // 1분
   max: 5,
-  message: { message: '⏱ 요청이 너무 많아요. 잠시 후 다시 시도해주세요.' }
+  keyGenerator: (req) => {
+    return req.headers['x-user-id'] || req.ip; // uuid 우선, 없으면 IP
+  },
+  message: { message: '요청이 너무 많아요. 잠시 후 다시 시도해 주세요.' }
 });
 
 
@@ -23,7 +29,7 @@ app.use(express.json());
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// 캐시 검사 함수수
+// 캐시 검사 함수
 function isDuplicateSearch(ip, keyword) {
   const key = `${ip}_${keyword.trim().toLowerCase()}`;
   const now = Date.now();
@@ -37,6 +43,23 @@ function isDuplicateSearch(ip, keyword) {
   return false;
 }
 
+// 일일 요청 제한 검사 함수 //
+function isOverDailyLimit(userId) {
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const record = dailyRequestCount.get(userId);
+
+  if (!record || record.lastDate !== today) {
+    dailyRequestCount.set(userId, { count: 1, lastDate: today });
+    return false;
+  }
+
+  if (record.count >= 100) return true;
+
+  record.count++;
+  dailyRequestCount.set(userId, record);
+  return false;
+}
+
 
 // 🔗 question 라우터
 const questionRoute = require('./routes/question');
@@ -45,9 +68,20 @@ app.use('/question', questionRoute);
 // 🔍 검색 API
 app.post('/search', searchLimiter, async (req, res) => {
   const { keyword: userQuery } = req.body;
+  const userId = req.headers['x-user-id'] || 'unknown';
   if (!userQuery?.trim()) {
     return res.status(400).json({ message: '검색어를 입력해주세요.' });
   }
+  if (!isValidKeyword(userQuery)) {
+    return res.status(400).json({ message: '검색어가 올바르지 않아요. 다시 입력해 주세요.' }); // 거부 패턴 차단
+  }
+  if (containsBlockedWord(userQuery)) {
+    return res.status(403).json({ message: '이런 표현은 사용할 수 없어요. 다시 입력해주세요.' });
+  }
+  if (isOverDailyLimit(userId)) {
+    return res.status(429).json({ message: '오늘은 더 이상 검색할 수 없어요. 내일 다시 시도해 주세요.' });
+  }
+  
 
   console.log(`\n🔍 검색 시작: ${userQuery}`);
   let keyword = userQuery.trim();
@@ -129,6 +163,9 @@ const userIp = req.ip || req.headers['x-forwarded-for'] || 'unknown';
 if (isDuplicateSearch(userIp, keyword)) {
   return res.status(429).json({ message: '같은 내용을 너무 자주 검색하고 있어요. 잠시 후 다시 시도해주세요.' });
 }
+
+logSearch(userIp, userQuery, userId); // 검색 기록 저장장
+
 
   // 5단계: GPT 요약
   const prompt = `

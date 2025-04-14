@@ -1,9 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 
+
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+
+let userId = localStorage.getItem('userId');
+if (!userId) {
+  userId = crypto.randomUUID(); // 또는 uuid 라이브러리도 가능
+  localStorage.setItem('userId', userId);
+}
 
 function App() {
   const [keyword, setKeyword] = useState('');
@@ -20,7 +27,9 @@ function App() {
   const [currentQuestion, setCurrentQuestion] = useState('');
   const [isQuestionMode, setIsQuestionMode] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
-  const [showNotice, setShowNotice] = useState(true); // 🔔 사용 전 주의사항 팝업
+  const [showNotice, setShowNotice] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
+
 
 
   const handleSearch = async (query, preserveQuestions = false) => {
@@ -42,7 +51,8 @@ function App() {
     }
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/search`, { keyword: rawInput });
+      const response = await axios.post(`${API_BASE_URL}/search`, { keyword: rawInput, headers: { 'x-user-id': userId }
+      }, );
       setSummary(response.data.summary);
       setInitialResult(response.data.summary);
       setSource(response.data.source);
@@ -53,6 +63,7 @@ function App() {
     } catch (err) {
       const msg = err.response?.data?.message || '검색 중 오류가 발생했습니다.';
       setError(msg);
+      setErrorMessage(msg); 
     } finally {
       setLoading(false);
     }
@@ -74,7 +85,8 @@ function App() {
       const response = await axios.post(`${API_BASE_URL}/question`, {
         context,
         question
-      });
+      }
+    ,{ headers: { 'x-user-id': userId } });
       setQuestionAnswer(response.data.answer);
     } catch (err) {
       console.error('❌ 질문 응답 실패:', err);
@@ -109,6 +121,16 @@ function App() {
 
 return (
   <div className="App">
+
+    {errorMessage && (
+      <div className="popup-overlay">
+        <div className="popup-notice">
+          <h3>⚠️ 안내</h3>
+          <p>{errorMessage}</p>
+          <button className="confirm-btn" onClick={() => setErrorMessage('')}>확인</button>
+        </div>
+      </div>
+    )}
 
     {showNotice && (
       <div className="popup-overlay">
@@ -147,12 +169,6 @@ return (
         </div>
       )}
 
-      {error && (
-        <div className="error">
-          <p>{error}</p>
-        </div>
-      )}
-
       {!isQuestionMode && summary && (
         <div className="result">
           <div className="source-box">📚 이번 정보는 <strong>{source}</strong>에서 찾았어요!</div>
@@ -187,6 +203,7 @@ return (
           </ul>
         </div>
       )}
+      
 
       {showAbout && (
         <div className={`popup ${showAbout ? 'show' : ''}`}>

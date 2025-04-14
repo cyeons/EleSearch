@@ -280,6 +280,12 @@ h1 {
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
 }
 
+.popup-notice p {
+  font-size: 1rem;
+  color: #555;
+  text-align: center; /* ✅ 가운데 정렬 추가 */
+}
+
 .popup-notice h3 {
   margin-bottom: 1rem;
   font-size: 1.2rem;
