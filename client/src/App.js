@@ -48,6 +48,7 @@ function App() {
       setUsedQuestions([]);
     }
 
+    setLoadingMessage('🤖 GPT가 내용을 정리 중이에요... 시간이 조금 걸릴 수 있어요!'); 
     try {
       const response = await axios.post(`${API_BASE_URL}/search`, { keyword: rawInput, headers: { 'x-user-id': userId }
       }, );

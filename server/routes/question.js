@@ -1,3 +1,11 @@
+// server/routes/question.js
+const express = require('express');
+const router = express.Router();
+const { OpenAI } = require('openai');
+require('dotenv').config();
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
 router.post('/', async (req, res) => {
   const totalStart = Date.now();
 
@@ -55,3 +63,5 @@ ${question}
     res.status(500).json({ message: '질문 응답 중 오류가 발생했습니다.', error: error.message });
   }
 });
+
+module.exports = router;
