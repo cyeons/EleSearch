@@ -37,7 +37,6 @@ function App() {
 
     setLoading(true);
     setLoadingMessage('🌏 인터넷에서 정보 찾는 중...');
-    setError('');
     setSummary('');
     setSource('');
     setQuestionAnswer('');
@@ -61,7 +60,6 @@ function App() {
       }
     } catch (err) {
       const msg = err.response?.data?.message || '검색 중 오류가 발생했습니다.';
-      setError(msg);
       setErrorMessage(msg); 
     } finally {
       setLoading(false);
@@ -89,7 +87,6 @@ function App() {
       setQuestionAnswer(response.data.answer);
     } catch (err) {
       console.error('❌ 질문 응답 실패:', err);
-      setError('질문 응답 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -106,7 +103,6 @@ function App() {
     setIsQuestionMode(false);
     setInitialResult(null);
     setContext('');
-    setError('');
   };
 
   const returnToInitialSummary = () => {
