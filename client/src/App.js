@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './App.css';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
@@ -21,7 +21,6 @@ function App() {
   const [source, setSource] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
-  const [error, setError] = useState('');
   const [context, setContext] = useState('');
   const [questionAnswer, setQuestionAnswer] = useState('');
   const [currentQuestion, setCurrentQuestion] = useState('');
