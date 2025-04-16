@@ -34,6 +34,16 @@ app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+
+// 보호용 미들웨어
+function checkAdminToken(req, res, next) {
+  const token = req.headers['x-admin-token'];
+  if (token !== process.env.ADMIN_TOKEN) {
+    return res.status(403).send('🚫 접근이 제한되었습니다.');
+  }
+  next();
+}
+
 // 캐시 검사 함수
 function isDuplicateSearch(ip, keyword) {
   const key = `${ip}_${keyword.trim().toLowerCase()}`;
@@ -276,7 +286,7 @@ app.listen(port, () => {
   console.log(`✅ 서버 실행 중: http://localhost:${port}`);
 });
 
-app.get('/admin/logs/:date', (req, res) => {
+app.get('/admin/logs/:date', checkAdminToken, (req, res) => {
   const date = req.params.date; // 예: 2024-04-18
   const logPath = path.join(__dirname, 'logs', `search-${date}.log`);
 
@@ -291,7 +301,7 @@ app.get('/admin/logs/:date', (req, res) => {
   res.send(lastLines);
 });
 
-app.get('/admin/errors/:date', (req, res) => {
+app.get('/admin/errors/:date', checkAdminToken, (req, res) => {
   const date = req.params.date; // 예: 2024-04-18
   const logPath = path.join(__dirname, 'logs', `error-${date}.log`);
 
@@ -305,3 +315,5 @@ app.get('/admin/errors/:date', (req, res) => {
   res.set('Content-Type', 'text/plain');
   res.send(lastLines);
 });
+
+
