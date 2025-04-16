@@ -276,20 +276,32 @@ app.listen(port, () => {
   console.log(`✅ 서버 실행 중: http://localhost:${port}`);
 });
 
-app.get('/admin/logs', (req, res) => {
-  const logPath = path.join(__dirname, 'logs', 'search.log');
-  if (!fs.existsSync(logPath)) return res.send('📭 아직 로그가 없습니다.');
+app.get('/admin/logs/:date', (req, res) => {
+  const date = req.params.date; // 예: 2024-04-18
+  const logPath = path.join(__dirname, 'logs', `search-${date}.log`);
+
+  if (!fs.existsSync(logPath)) {
+    return res.status(404).send('📭 해당 날짜의 검색 로그가 없습니다.');
+  }
+
   const lines = fs.readFileSync(logPath, 'utf-8').trim().split('\n');
-  const lastLines = lines.slice(-50).join('\n');
+  const lastLines = lines.slice(-100).join('\n');
+
   res.set('Content-Type', 'text/plain');
   res.send(lastLines);
 });
 
-app.get('/admin/errors', (req, res) => {
-  const logPath = path.join(__dirname, 'logs', 'error.log');
-  if (!fs.existsSync(logPath)) return res.send('📭 아직 에러 로그가 없습니다.');
+app.get('/admin/errors/:date', (req, res) => {
+  const date = req.params.date; // 예: 2024-04-18
+  const logPath = path.join(__dirname, 'logs', `error-${date}.log`);
+
+  if (!fs.existsSync(logPath)) {
+    return res.status(404).send('📭 해당 날짜의 에러 로그가 없습니다.');
+  }
+
   const lines = fs.readFileSync(logPath, 'utf-8').trim().split('\n');
-  const lastLines = lines.slice(-50).join('\n');
+  const lastLines = lines.slice(-100).join('\n');
+
   res.set('Content-Type', 'text/plain');
   res.send(lastLines);
 });

@@ -53,8 +53,11 @@ function App() {
     }, 5000);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/search`, { keyword: rawInput, headers: { 'x-user-id': userId }
-      }, );
+      const response = await axios.post(
+        `${API_BASE_URL}/search`,
+        { keyword: rawInput }, // 🔹 JSON body
+        { headers: { 'x-user-id': userId } } // 🔹 HTTP headers
+      );
       clearTimeout(gptTimeout);
       setSummary(response.data.summary);
       setInitialResult(response.data.summary);
