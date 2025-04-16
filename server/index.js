@@ -7,9 +7,11 @@ const { OpenAI } = require('openai');
 const { isReliableResult, isValidKeyword, containsBlockedWord } = require('./utils/validate');
 const rateLimit = require('express-rate-limit');
 const recentSearchCache = new Map(); // key: ip+keyword, value: timestamp
-const { logSearch } = require('./utils/logger');
+const { logSearch, logError } = require('./utils/logger');
 const dailyRequestCount = new Map(); // key: userId, value: { count, lastDate }
 const bodyParser = require('body-parser');
+const fs = require('fs');
+const path = require('path');
 
 require('dotenv').config();
 
@@ -62,13 +64,10 @@ function isOverDailyLimit(userId) {
   dailyRequestCount.set(userId, record);
   return false;
 }
-
-
 // 🔗 question 라우터
 const questionRoute = require('./routes/question');
 app.use('/question', questionRoute);
 
-// 🔍 검색 API
 // 🔍 검색 API
 app.post('/search', searchLimiter, async (req, res) => {
   const totalStart = Date.now();
@@ -99,7 +98,6 @@ app.post('/search', searchLimiter, async (req, res) => {
 
   let keyword = userQuery.trim();
 
-  // 1단계: GPT로 핵심 키워드 추출
   try {
     const extractPrompt = `다음 문장에서 핵심 키워드 하나만 뽑아줘. 문장: "${userQuery}"`;
     const completion = await openai.chat.completions.create({
@@ -124,42 +122,54 @@ app.post('/search', searchLimiter, async (req, res) => {
   let summary = '';
   let questions = [];
 
-  // 2단계: 한국어 위키
   try {
     console.log('🌐 1단계: 한국어 위키 검색 시도');
-    const response = await axios.get(`https://ko.wikipedia.org/wiki/${encodeURIComponent(keyword)}`);
+    const response = await axios.get(
+      `https://ko.wikipedia.org/wiki/${encodeURIComponent(keyword)}`,
+      { timeout: 5000 }
+    );
     const $ = cheerio.load(response.data);
     const content = $('#mw-content-text .mw-parser-output p').text().trim();
+    if (!content || content.length < 50) {
+      throw new Error('본문 없음 또는 너무 짧음');
+    }
     originalText = content;
     source = '한국어 위키피디아';
     success = true;
   } catch (err) {
-    console.warn('⚠️ 한국어 위키 검색 실패:', err.message);
+    console.warn('⚠️ 한국어 위키 검색 실패:', err.response?.status || '응답 없음', err.message);
   }
 
-  // 3단계: 영어 위키
   if (!success) {
     try {
       console.log('🌐 2단계: 영어 위키 검색 시도');
-      const response = await axios.get(`https://en.wikipedia.org/wiki/${encodeURIComponent(keyword)}`);
+      const response = await axios.get(
+        `https://en.wikipedia.org/wiki/${encodeURIComponent(keyword)}`,
+        { timeout: 5000 }
+      );
       const $ = cheerio.load(response.data);
       const content = $('#mw-content-text .mw-parser-output p').text().trim();
+      if (!content || content.length < 50) {
+        throw new Error('본문 없음 또는 너무 짧음');
+      }
       originalText = content;
       source = '영어 위키피디아';
       success = true;
     } catch (err) {
-      console.warn('⚠️ 영어 위키 검색 실패:', err.message);
+      console.warn('⚠️ 영어 위키 검색 실패:', err.response?.status || '응답 없음', err.message);
     }
   }
 
-  // 4단계: Serper 검색 (자연어 그대로 사용)
   if (!success) {
     try {
       console.log('🌐 3단계: Serper 웹 검색 시도');
       const response = await axios.post(
         'https://google.serper.dev/search',
         { q: userQuery },
-        { headers: { 'X-API-KEY': process.env.SERPER_API_KEY } }
+        {
+          headers: { 'X-API-KEY': process.env.SERPER_API_KEY },
+          timeout: 7000
+        }
       );
       const first = response.data.organic?.[0]?.snippet;
       if (!first) throw new Error('검색 결과 없음');
@@ -168,6 +178,7 @@ app.post('/search', searchLimiter, async (req, res) => {
       success = true;
     } catch (err) {
       console.error(`❌ Serper 검색 실패: (${userQuery}) →`, err.message);
+      logError(`Serper 검색 실패: (${userQuery}) → ${err.message}`);
       return res.status(404).json({ message: '관련 정보를 찾지 못했습니다.' });
     }
   }
@@ -202,6 +213,7 @@ ${originalText.slice(0, 2000)}
     summary = completion.choices[0].message.content.trim();
   } catch (err) {
     const status = err.response?.status;
+    logError(`GPT 요약 실패: ${err.message}`);
     if (status === 429) {
       return res.status(429).json({ message: '요청이 너무 많아요. 잠시 후 다시 시도해 주세요.' });
     }
@@ -240,6 +252,7 @@ ${summary}
       .filter(Boolean);
   } catch (err) {
     console.warn('❗ 질문 추천 실패:', err.message);
+    logError(`질문 추천 실패: ${err.message}`);
   }
 
   timeMark('질문 추천 완료');
@@ -255,9 +268,28 @@ ${summary}
   console.log(`🎉 검색 성공 → 총 소요 시간: ${totalDuration}ms`);
 
   res.json({ summary, questions, source, originalText });
-});
+}); // ✅ ← app.post('/search') 닫기용 괄호
 
+// ✅ 아래는 서버 실행과 로그 API
 
 app.listen(port, () => {
   console.log(`✅ 서버 실행 중: http://localhost:${port}`);
+});
+
+app.get('/admin/logs', (req, res) => {
+  const logPath = path.join(__dirname, 'logs', 'search.log');
+  if (!fs.existsSync(logPath)) return res.send('📭 아직 로그가 없습니다.');
+  const lines = fs.readFileSync(logPath, 'utf-8').trim().split('\n');
+  const lastLines = lines.slice(-50).join('\n');
+  res.set('Content-Type', 'text/plain');
+  res.send(lastLines);
+});
+
+app.get('/admin/errors', (req, res) => {
+  const logPath = path.join(__dirname, 'logs', 'error.log');
+  if (!fs.existsSync(logPath)) return res.send('📭 아직 에러 로그가 없습니다.');
+  const lines = fs.readFileSync(logPath, 'utf-8').trim().split('\n');
+  const lastLines = lines.slice(-50).join('\n');
+  res.set('Content-Type', 'text/plain');
+  res.send(lastLines);
 });

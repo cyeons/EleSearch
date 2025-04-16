@@ -48,10 +48,14 @@ function App() {
       setUsedQuestions([]);
     }
 
-    setLoadingMessage('🤖 GPT가 내용을 정리 중이에요... 시간이 조금 걸릴 수 있어요!'); 
+    const gptTimeout = setTimeout(() => {
+      setLoadingMessage('🤖 AI가 내용을 정리 중이에요... 조금만 기다려 주세요!');
+    }, 5000);
+
     try {
       const response = await axios.post(`${API_BASE_URL}/search`, { keyword: rawInput, headers: { 'x-user-id': userId }
       }, );
+      clearTimeout(gptTimeout);
       setSummary(response.data.summary);
       setInitialResult(response.data.summary);
       setSource(response.data.source);
