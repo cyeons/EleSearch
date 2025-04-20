@@ -26,7 +26,11 @@ const searchLimiter = rateLimit({
 });
 
 
-app.use(cors());
+app.use(cors({
+  origin: 'https://elesearch.netlify.app',
+  methods: ['GET', 'POST', 'OPTIONS'],
+  credentials: true
+}));
 app.use(express.json());
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
