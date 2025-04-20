@@ -44,20 +44,20 @@ function cleanOldLogs() {
 
 // ✅ 검색 로그 기록
 function logSearch(ip, keyword, userId) {
-  const timestamp = getKoreanTimestamp();
-  const filename = `search-${getTodayDate()}.log`;
-  const logLine = `[${timestamp}] 검색: ${keyword} | IP: ${ip} | UUID: ${userId}\n`;
+  // const timestamp = getKoreanTimestamp();
+  // const filename = `search-${getTodayDate()}.log`;
+  // const logLine = `[${timestamp}] 검색: ${keyword} | IP: ${ip} | UUID: ${userId}\n`;
 
-  fs.appendFileSync(path.join(logDir, filename), logLine, 'utf-8');
+  // fs.appendFileSync(path.join(logDir, filename), logLine, 'utf-8');
 }
 
 // ✅ 에러 로그 기록
 function logError(message) {
-  const timestamp = getKoreanTimestamp();
-  const filename = `error-${getTodayDate()}.log`;
-  const logLine = `[${timestamp}] ❌ ERROR: ${message}\n`;
+  // const timestamp = getKoreanTimestamp();
+  // const filename = `error-${getTodayDate()}.log`;
+  // const logLine = `[${timestamp}] ❌ ERROR: ${message}\n`;
 
-  fs.appendFileSync(path.join(logDir, filename), logLine, 'utf-8');
+  // fs.appendFileSync(path.join(logDir, filename), logLine, 'utf-8');
 }
 
 cleanOldLogs(); // 🧹 서버 실행 시 오래된 로그 정리
