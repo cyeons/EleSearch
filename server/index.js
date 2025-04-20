@@ -16,7 +16,6 @@ const path = require('path');
 require('dotenv').config();
 
 const app = express();
-const port = process.env.PORT || 3001;
 const searchLimiter = rateLimit({
   windowMs: 60 * 1000,  // 1분
   max: 5,
@@ -282,9 +281,14 @@ ${summary}
 
 // ✅ 아래는 서버 실행과 로그 API
 
-app.listen(port, () => {
-  console.log(`✅ 서버 실행 중: http://localhost:${port}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+  const port = process.env.PORT || 3001;
+  app.listen(port, () => {
+    console.log(`✅ 서버 실행 중: http://localhost:${port}`);
+  });
+}
+
+module.exports = app;
 
 app.get('/admin/logs/:date', checkAdminToken, (req, res) => {
   const date = req.params.date; // 예: 2024-04-18
